@@ -2,7 +2,6 @@ const express = require("express");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
-const authRoutes = require("./routes/authRoutes");
 const gptRoutes = require("./routes/modelRoutes");
 const transcriptRoutes = require("./routes/transcriptRoutes");
 const { fetchTranscript } = require("./controllers/transcriptController");
@@ -17,7 +16,6 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/summarize", modelRoutes);
-app.use("/auth", authRoutes);
 app.use("/transcript", transcriptRoutes);
 
 // mongoose
