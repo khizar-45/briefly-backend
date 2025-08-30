@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const { fetchTranscript } = require("../controllers/transcriptController");
+const { summarizeTranscript } = require("../controllers/modelController");
 const authMiddleware = require("../middleware/authMiddleware");
 
-router.post("/fetch", fetchTranscript);
+router.post("/generate-summary", summarizeTranscript);
 
 module.exports = router;

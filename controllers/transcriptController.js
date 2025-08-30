@@ -1,89 +1,50 @@
 const { getTranscript } = require('youtube-transcript');
-const responseCodes = require('../utils/responseCodes');
 const Summary = require('../models/Summary');
+const axios = require("axios");
 
 
-const fetchTranscript = async (req, res) => {
+const fetchingTester = async (req, res) => {
   const { videoUrl } = req.body;
-
+  const baseURL = process.env.TRANSCRIPT_SERVICE_URL;
+  
   try {
-    if (!videoUrl || (!videoUrl.includes("youtube.com/watch") && !videoUrl.includes("youtu.be/"))) {
-      return res.status(responseCodes.BAD_REQUEST).json({
-        message: 'Invalid YouTube URL'
-      });
-    }
-
-    // Extract video ID
-    let videoId;
-    if (videoUrl.includes('youtu.be/')) {
-      videoId = videoUrl.split('youtu.be/')[1].split('?')[0];
-    } else if (videoUrl.includes('v=')) {
-      videoId = videoUrl.split('v=')[1].split('&')[0];
-    }
-
-    if (!videoId) {
-      return res.status(responseCodes.BAD_REQUEST).json({
-        message: 'Unable to extract video ID from URL'
-      });
-    }
-
-    const transcript = await getTranscript(videoId);
-
-    if (!transcript || transcript.length === 0) {
-      return res.status(responseCodes.NOT_FOUND).json({
-        message: 'Transcript not available for this video'
-      });
-    }
-
-    // Convert transcript to plain text
-    const plainText = transcript.map(item => item.text).join(' ');
-
-    res.status(responseCodes.SUCCESS).json({
-      message: 'Transcript fetched successfully',
-      transcript: plainText
+    const response = await axios.post(
+      `${baseURL}/transcript` || 
+      'http://127.0.0.1:5000/transcript',{ video_url: videoUrl } , { headers: { 'Content-Type': 'application/json' }
     });
+
+    const { data } = await response;
+
+    return res.status(response.status).json(data);
 
   } catch (error) {
     console.error('Transcript Error:', error.message);
-    res.status(responseCodes.SERVER_ERROR).json({
+    res.status(500).json({
       message: 'Failed to fetch transcript',
       error: error.message
     });
   }
-};
+}
 
-const getSummaryHistory = async (req, res) => {
+const fetchTranscript = async (videoUrl) => {
+  const baseURL = process.env.TRANSCRIPT_SERVICE_URL;
+
   try {
-    const userId = req.user._id; // comes from authMiddleware
-    const page = parseInt(req.query.page) || 1; // default to page 1
-    const limit = 10;
-    const skip = (page - 1) * limit;
+    const response = await axios.post(
+       `${baseURL}/transcript` || 
+      'http://127.0.0.1:5000/transcript',
+      { video_url: videoUrl },
+      { headers: { "Content-Type": "application/json" } }
+    );
 
-    const summaries = await Summary.find({ userId })
-      .sort({ createdAt: -1 }) // newest first
-      .skip(skip)
-      .limit(limit);
-
-    const totalSummaries = await Summary.countDocuments({ userId });
-
-    res.status(responseCodes.SUCCESS).json({
-      message: 'Summary history fetched successfully',
-      currentPage: page,
-      totalPages: Math.ceil(totalSummaries / limit),
-      totalSummaries,
-      summaries,
-    });
-
+    return response.data;
   } catch (error) {
-    console.error('History Fetch Error:', error.message);
-    res.status(responseCodes.SERVER_ERROR).json({
-      message: 'Failed to fetch summary history',
-      error: error.message,
-    });
+    console.error("Transcript Error:", error.message);
+    throw new Error("Failed to fetch transcript");
   }
 };
 
 module.exports = {
-  fetchTranscript,
-  getSummaryHistory
+  fetchingTester,
+  fetchTranscript
 };
